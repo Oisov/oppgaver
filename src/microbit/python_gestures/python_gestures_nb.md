@@ -41,7 +41,7 @@ Igjen, siden vi ønsker at enheten skal reagere på endringer i miljøet så bru
 vi en `while`-løkke. Inne i løkka så leses bevegelsen som skjer i variabelen
 `gesture`. Mens `if`-setningen sjekker om `gesture` er likt `face up` (Python
 bruker `==` for å teste likhet, ett enkelt likhetstegn `=` brukes for å
-deklarere variabler -- akkurat som vi deklarerte at bevegelsen skulle leses inn
+deklarere variabler - akkurat som vi deklarerte at bevegelsen skulle leses inn
 i `gesture` variabelen). Dersom bevegelsen er likt `face up` så skal displayet
 vise et smilefjes. Ellers så er enheten sur på oss!
 
@@ -89,13 +89,13 @@ while True:
 Mesteparten av programmet er en liste kalt `answers`. Det faktiske spillet er
 inne i `while`-løkka på slutten.
 
-Standard tilstanden til spillet er å vise tallet `"8"`. Men programmet må og
+Den normale tilstanden til spillet er å vise tallet `"8"`. Men programmet må og
 oppdage når det ristes. Metoden `was_gesture` bruker argumentet sitt (i dette
 tilfellet tekststrengen `"shake"` fordi vi vil oppdage risting) til å returnere
 enten `True` eller `False`. Dersom enheten ble ristet så vil `if`-setningen gå
 inn i blokken hvor den først fjerner all tekst på skjermen, venter ett sekund
-(så brukeren får en illusjon av at programmet ditt tenker på svaret) for
-deretter å vise et tilfeldig valgt svar.
+(så brukeren får en illusjon av at programmet ditt tenker) for deretter å vise
+et tilfeldig valgt svar.
 
 Er ikke dette det beste programmet noensinne skrevet?
 
@@ -108,11 +108,14 @@ til og alltid være positivt eller negativt.
 
 ## Sjekkliste {.check}
 
-- [ ] Skriv om koden slik at ved å trykke på `A` mens den ristes vises ett *positivt* resultat. 
+- [ ] Skriv om koden slik at ved å trykke på `A` mens den ristes vises ett
+      *positivt* resultat.
 
-- [ ] Skriv om koden slik at ved å trykke på `B` mens den ristes vises ett *negativ* resultat. 
+- [ ] Skriv om koden slik at ved å trykke på `B` mens den ristes vises ett
+      *negativ* resultat.
 
-- [ ] Skriv om koden slik at ved å trykke både på `A` **og** `B` vises ett nøytralt resultat.
+- [ ] Skriv om koden slik at ved å trykke både på `A` *og* `B` vises ett
+      nøytralt resultat.
 
 Merk at koden skal fortsatt virke som før om ingen knapper trykkes, med andre
 ord dersom enheten bare ristes skal den vise et tilfeldig resultat.
