@@ -7,6 +7,7 @@ translator: "Øistein Søvik"
 language: nb
 ---
 
+
 # Introduksjon {.intro}
 
 En virkelig interessant bieffekt av å ha ett akselerometer er at den kan merke
