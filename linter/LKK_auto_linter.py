@@ -37,11 +37,13 @@ def get_md_files(path):
 def main():
     linted_times_ = load_last_modified_times()
     md_files = get_md_files(PATH_2_SRC)
-
-    for md_file in md_files:
+    files_linted = 0
+    for i, md_file in enumerate(md_files):
         # Check if the file has been updated since last linting
         last_modified_time = os.path.getmtime(md_file)
         if last_modified_time > linted_times_[md_file]:
+            print(md_file)
+            files_linted += 1
             # If so auto lint the file again
             os.system('{} {}'.format(PATH_2_LINTER, md_file))
             # ensures the last modified date is truly updated
@@ -49,6 +51,7 @@ def main():
             # Update when the file was last linted
             linted_times_[md_file] = os.path.getmtime(md_file)
     save_last_modified_times(linted_times_)
+    print("  Linted {}:{}\n".format(files_linted, i+1))
 
 
 if __name__ == "__main__":

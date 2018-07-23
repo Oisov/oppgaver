@@ -81,14 +81,18 @@ perl -i -0pe 's/(.)\n+(- ?\[ ?\] ?)(.)/\1\n\n- \[ \] \3/g' $FILE2
 # perl -i -ane '$n=(@F==0) ? $n+1 : 0; print if $n<=2' $FILE2
 
 # This would overwrite the new file with the old if changes has been made
-if cmp -s "$FILE1" "$FILE2"
-then
-    # echo "The files are the same"
-    rm $FILE2
-else
-    echo "$FILE1"
-    mv $FILE2 $FILE1
-fi
+# The method below is slow, but ensures that the file is only updated if changed
+#
+# if cmp -s "$FILE1" "$FILE2"
+# then
+#     # echo "The files are the same"
+#     rm $FILE2
+# else
+#     echo "$FILE1"
+#     mv $FILE2 $FILE1
+# fi
+
+mv $FILE2 $FILE1
 
 # Explenation of some of the regex
 #
