@@ -55,22 +55,22 @@ def update_lesson_yml(yml_data, new_level=float('Inf')):
     if new_level == float('Inf'):
         lvl = re.search(r' *level *: *({})'.format(LEVEL), yml_data)
         if lvl:
-            yml_data_new = 'level: ' + lvl.group(1)
+            yml_level = 'level: {}'.format(lvl.group(1))
         else:
-            yml_data_new = 'level: '
+            yml_level = 'level: '
     else:
-        yml_data_new = 'level: {}'.format(max(min(new_level, 4), 1))
-    yml_data_new += '\ntags:\n'
+        yml_level= 'level: {}'.format(max(min(new_level, 4), 1))
 
     # Fixes the order of the tags
+    yml_tags = '\ntags:\n'
     for key_type in KEYS:
         match = re.search(r"({}:)(\[.*\]\n)".format(key_type), yml_data)
         if match:
-            yml_data_new += '{}{} {}'.format(' '*INDENT, match.group(1), match.group(2))
+            yml_tags += '{}{} {}'.format(' '*INDENT, match.group(1), match.group(2))
         # else:
             # yml_data_new += '{}{}: []\n'.format(' '*INDENT, key_type)
-
-    return yml_data_new[:-1]
+    # return level + any found yml tags
+    return yml_level + (yml_tags if yml_tags != '\ntags:\n' else '\n')
 
 
 def sort_yml_in_md(md_data, remove_level):
@@ -89,7 +89,7 @@ def sort_yml_in_md(md_data, remove_level):
     level = re.search(r"(level:) *([1-4])", yaml_header)
     author = re.search(r"(author:) *(.*)", yaml_header)
     external = re.search(r"(external:) *(.*)", yaml_header)
-    licence = re.search(r"(licence:) *(.*)", yaml_header)
+    licence = re.search(r"(license:) *(.*)", yaml_header)
     lang = re.search(r"(language:) *(\w*) *", yaml_header)
     translator = re.search(r"(translator:) *(.*) *", yaml_header)
     rem = re.finditer(REGEX_FIND_REM, yaml_header)
@@ -97,9 +97,20 @@ def sort_yml_in_md(md_data, remove_level):
     sorted_yaml = ''
     for result in [title, level, author, translator, *rem, licence, lang, external]:
         if result:
-            if result.group(1) == 'level:' and remove_level:
+            if not result.group(0):
                 continue
-            sorted_yaml += result.group(0).strip() + "\n"
+            if result.group(1) == 'level:' and remove_level:
+                    continue
+            else:
+                if not result.group(1).strip():
+                    continue
+                print(result.group(1))
+                non_word = re.search(r"[^\w\sæøåÆØÅ]", result.group(2))
+                if non_word:
+                    sorted_yaml += '{} "{}"\n'.format(result.group(1), result.group(2).strip())
+                else:
+                    sorted_yaml += "{} {}\n".format(result.group(1), result.group(2).strip())
+
     if level and remove_level:
         if level.group(2):
             return (sorted_yaml[:-1], level.group(2))
