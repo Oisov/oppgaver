@@ -2,13 +2,14 @@ import pickle
 import os
 import glob
 import time
+import re
 
 from pathlib import Path
 from collections import defaultdict
 
 PATH_2_LAST_LINTED_TIMES = "./last_auto_linted_times.pkl"
 PATH_2_SRC = '../src'
-PATH_2_LINTER = './temp/LKK_auto_linter.sh'
+PATH_2_LINTER = './LKK_auto_linter.sh'
 
 
 def load_last_modified_times():
@@ -35,6 +36,12 @@ def get_md_files(path):
     return glob.glob(path + '/**/*.md', recursive=True)
 
 
+def is_oppgave(filepath):
+    # Every oppgave has a lesson.yml in the same folder
+    yml_path = Path(re.sub(r'\w+\.md', 'lesson.yml', filepath))
+    return yml_path.is_file()
+
+
 def main():
     linted_times_ = load_last_modified_times()
     md_files = get_md_files(PATH_2_SRC)
@@ -46,7 +53,8 @@ def main():
             # If so auto lint the file again
             os.system('{} {}'.format(PATH_2_LINTER, md_file))
             # If so auto lint the file again
-            os.system('{} {}'.format('python LKK_sorter.py', md_file))
+            if is_oppgave(md_file):
+                os.system('{} {}'.format('python LKK_sorter.py', md_file))
 
             # Update when the file was last linted
             # Note this gives time since epoch (1970), avoids messing with the file timestamp

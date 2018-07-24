@@ -18,6 +18,7 @@ tags:
 KEYS = ['topic', 'subject', 'grade']
 MIN_LEVEL = 1
 MAX_LEVEL = 4 # Change this to change allowed levels.
+INDENT = 2
 
 MOVE_LEVEL_2_LESSON_YML = False
 
@@ -30,9 +31,9 @@ LEVEL = '[{}-{}]'.format(MIN_LEVEL, MAX_LEVEL)
 def lesson_yml(md_filepath, new_level=float('inf')):
     lesson_yml_path = Path(re.sub(r'\w+\.md', 'lesson.yml', md_filepath))
     if lesson_yml_path.is_file():
-        with open(PATH + 'lesson.yml', "r") as f:
+        with open(lesson_yml_path, "r") as f:
             yml_data = f.read()
-        with open(PATH + 'lesson.yml', "w") as f:
+        with open(lesson_yml_path, "w") as f:
             for line in update_lesson_yml(yml_data, new_level):
                 f.write(line)
     else:
@@ -65,9 +66,9 @@ def update_lesson_yml(yml_data, new_level=float('Inf')):
     for key_type in KEYS:
         match = re.search(r"({}:)(\[.*\]\n)".format(key_type), yml_data)
         if match:
-            yml_data_new += '  {} {}'.format(match.group(1), match.group(2))
+            yml_data_new += '{}{} {}'.format(' '*INDENT, match.group(1), match.group(2))
         else:
-            yml_data_new += '  {}: []\n'.format(key_type)
+            yml_data_new += '{}{}: []\n'.format(' '*INDENT, key_type)
 
     return yml_data_new[:-1]
 
