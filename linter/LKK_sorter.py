@@ -67,8 +67,8 @@ def update_lesson_yml(yml_data, new_level=float('Inf')):
         match = re.search(r"({}:)(\[.*\]\n)".format(key_type), yml_data)
         if match:
             yml_data_new += '{}{} {}'.format(' '*INDENT, match.group(1), match.group(2))
-        else:
-            yml_data_new += '{}{}: []\n'.format(' '*INDENT, key_type)
+        # else:
+            # yml_data_new += '{}{}: []\n'.format(' '*INDENT, key_type)
 
     return yml_data_new[:-1]
 
@@ -94,11 +94,8 @@ def sort_yml_in_md(md_data, remove_level):
     translator = re.search(r"(translator:) *(.*) *", yaml_header)
     rem = re.finditer(REGEX_FIND_REM, yaml_header)
 
-    if not author and external:
-        author = external
-
     sorted_yaml = ''
-    for result in [title, level, author, translator, *rem, licence, lang]:
+    for result in [title, level, author, translator, *rem, licence, lang, external]:
         if result:
             if result.group(1) == 'level:' and remove_level:
                 continue

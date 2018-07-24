@@ -49,7 +49,7 @@ sed -i -e 's/[[:space:]]*$//' $FILE2
 perl -i -0pe 's/^\n*\h*---?-?((.|\n)*?)\h*---?-?\n*(.*)/---\1---\n\n\3/g' $FILE2
 
 # Corrects all titles with punctuation
-perl -i -pe 's/^(#+ .*)(\.|\:|\;)\h*$/g' $FILE2
+perl -i -pe 's/^(#+ .*)(\.|\:|\;)\h*$/\1/g' $FILE2
 
 # Corrects all titles with incorrect brackets {}
 # Titles should be formated: # Title {.word}
