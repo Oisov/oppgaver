@@ -1,13 +1,14 @@
 import pickle
 import os
 import glob
+import time
 
 from pathlib import Path
 from collections import defaultdict
 
 PATH_2_LAST_LINTED_TIMES = "./last_auto_linted_times.pkl"
 PATH_2_SRC = '../src'
-PATH_2_LINTER = '../../temp/LKK_auto_linter.sh'
+PATH_2_LINTER = './temp/LKK_auto_linter.sh'
 
 
 def load_last_modified_times():
@@ -44,10 +45,12 @@ def main():
         if last_modified_time > linted_times_[md_file]:
             # If so auto lint the file again
             os.system('{} {}'.format(PATH_2_LINTER, md_file))
-            # ensures the last modified date is truly updated
-            os.system('touch {}'.format(md_file))
+            # If so auto lint the file again
+            os.system('{} {}'.format('python LKK_sorter.py', md_file))
+
             # Update when the file was last linted
-            linted_times_[md_file] = os.path.getmtime(md_file)
+            # Note this gives time since epoch (1970), avoids messing with the file timestamp
+            linted_times_[md_file] = time.time()
     save_last_modified_times(linted_times_)
 
 

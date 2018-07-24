@@ -11,7 +11,7 @@ GRADE = "preschool|primary|secondary|junior|senior"
 # KEYS END HERE (DO NOT REMOVE THESE LINES)
 
 tags_ = dict(
-    level="[1-4]",
+    level="[1-4]", #Change this line to change the max allowed level
     topic=TOPIC,
     subject=SUBJECT,
     grade=GRADE,
