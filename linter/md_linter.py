@@ -1,7 +1,12 @@
-import re
 import glob
-from termcolor import colored
+import os
+import pickle
+import re
+import time
+
+from collections import defaultdict
 from pathlib import Path
+from termcolor import colored
 
 # KEYS START HERE (DO NOT REMOVE THESE LINES)
 LANGUAGE = "nb|nn|en"
@@ -19,7 +24,28 @@ REGEX_ALT_OUTSIDE_CODE = r"```.*?```|`.*?`|(<img(?!.*?alt=(['\"]).*?\2)[^>]*)(>)
 REGEX_LONG_LINES_OUTSIDE_CODE = r"```(.|\n)*?```|`.*?`|(.{100,})"
 REGEX_FIND_YML = re.compile(r"^---[\s\S]+?---", re.DOTALL)
 
+PATH_2_ERROR_FREE_MD = "./error_free_md.pkl"
 PATH_2_SRC = '../src'
+
+
+def load_error_free_md(path_2_error_free_lesson_yml):
+    error_free_yml = Path(path_2_error_free_lesson_yml)
+    if error_free_yml.is_file():
+        # file exists
+        # read python dict back from the file
+        pkl_file = open(path_2_error_free_lesson_yml, 'rb')
+        error_free_md_ = pickle.load(pkl_file)
+        pkl_file.close()
+    else:
+        error_free_md_ = defaultdict(int)
+    return error_free_md_
+
+
+def save_error_free_md(error_free_md_, path_2_error_free_md):
+    # write python dict to a file
+    output = open(path_2_error_free_md, 'wb')
+    pickle.dump(error_free_md_, output)
+    output.close()
 
 
 def error_msg(string):
@@ -67,10 +93,10 @@ def find_missing_or_wrong_yaml_title(title_match, title):
     return missing_title, wrong_title
 
 
-def find_incorrect_yaml(data, is_oppgaver=True):
+def find_incorrect_yaml(data, path):
     match = re.findall(REGEX_FIND_YML, data)
     if not match:
-        if is_oppgaver:
+        if is_oppgaver(path):
             return [(1, error_msg('YAML'), 'Missing YAML header')]
         else:
             return []
@@ -93,7 +119,8 @@ def find_incorrect_yaml(data, is_oppgaver=True):
     empty_yaml_titles.append(empty_title) if empty_title else ''
     wrong_yaml_titles.append(wrong_title) if wrong_title else ''
 
-    if is_oppgaver:
+    # Oppgaver needs either author or external
+    if is_oppgaver(path):
         empty_author, wrong_author = find_missing_or_wrong_yaml_title(
             author, 'author')
         empty_external, wrong_external = find_missing_or_wrong_yaml_title(
@@ -122,8 +149,7 @@ def find_incorrect_class_in_headers(data):
         if m.group(1) not in CLASSES_LIST:
             line_w_fixed_brackets = m.group(0).replace('{', '{{').replace(
                 '}', '}}').strip()
-            incorrect_classes.append((m.start(0),
-                                      error_msg('class'),
+            incorrect_classes.append((m.start(0), error_msg('class'),
                                       color_incorrect([m.group(1)],
                                                       line_w_fixed_brackets)))
     return incorrect_classes
@@ -143,7 +169,7 @@ def find_correct_line_numbers(lines_with_errors, data):
     return line_numbers
 
 
-def find_lines_with_errors(data, is_oppgave):
+def find_lines_with_errors(data, path):
     # Returns a sorted list of errors, where each element is a tuple:
     #   (char, error_msg, line)
     # char is the first character of the error, line is the first
@@ -151,37 +177,48 @@ def find_lines_with_errors(data, is_oppgave):
     return sorted(
         find_missing_alts(data) + find_long_lines(data) +
         find_incorrect_class_in_headers(data) +
-        find_incorrect_yaml(data, is_oppgave))
+        find_incorrect_yaml(data, path))
 
 
-def is_oppgaver_path(filepath):
+def is_oppgaver(filepath):
     # Every oppgave has a lesson.yml in the same folder
     yml_path = Path(re.sub(r'\w+\.md', 'lesson.yml', filepath))
     return yml_path.is_file()
 
 
-def print_lines_with_errors(filepath):
+def print_lines_with_errors(filename, md_data, lines_with_errors):
     # Read file into one long string called data
-    with open(filepath, "r") as f:
-        data = f.read()
 
-    is_oppgaver = is_oppgaver_path(filepath)
     # If oppgaver then the file needs an author / external.
-    lines_with_errors = find_lines_with_errors(data, is_oppgaver)
-    if not lines_with_errors:
-        return
-    line_numbers = find_correct_line_numbers(lines_with_errors, data)
-    print('\n{}'.format(colored(filepath, 'yellow')))
+    line_numbers = find_correct_line_numbers(lines_with_errors, md_data)
+    print('\n{}'.format(colored(filename, 'yellow')))
     for i, line in enumerate(lines_with_errors):
         print('{:>15}:{:<18} {}'.format(
             colored(str(line_numbers[i]), 'yellow'), line[1],
             (line[2][:80] + '...') if len(line[2]) > 80 else line[2]))
 
 
+def get_md_files(path):
+    return glob.glob(path + '/**/*.md', recursive=True)
+
+
 def md_linter(path=PATH_2_SRC):
-    files = glob.glob(path + '/**/*.md', recursive=True)
-    for f in files:
-        print_lines_with_errors(f)
+
+    error_free_md_ = load_error_free_md(PATH_2_ERROR_FREE_MD)
+    for md_file in get_md_files(path):
+        last_modified_md = os.path.getmtime(md_file)
+        if last_modified_md <= error_free_md_[md_file]:
+            continue
+        with open(md_file, "r") as f:
+            md_data = f.read()
+
+        lines_with_errors = find_lines_with_errors(md_data, md_file)
+        if not lines_with_errors:
+            error_free_md_[md_file] = time.time()
+            save_error_free_md(error_free_md_,
+                               PATH_2_ERROR_FREE_MD)
+            continue
+        print_lines_with_errors(md_file, md_data, lines_with_errors)
 
 
 if __name__ == "__main__":
