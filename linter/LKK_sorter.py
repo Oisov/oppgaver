@@ -4,29 +4,28 @@ import sys
 
 from pathlib import Path
 
-REGEX_FIND_YML = re.compile(r"(?<=^---\s)[\s\S]+?(?=\n---)", re.DOTALL)
+REGEX_FIND_YML = re.compile(r"(?<=^---\s)[\s\S]+?(?=\r?\n---)", re.DOTALL)
 REGEX_FIND_REM = re.compile(
-    r"(\n(?!((title|author|translator|language|external|level)))).*")
-REGEX_WHITESPACE = re.compile(r'[ \t]+(\n|\Z)|(?<=\n)[ \t]+(?=(\n|\Z|.))')
+    r"\n(?!(title|author|translator|language|external|level)) *([^\n\r:]*:) *(.*)"
+)
 LESSON_TEMPLATE = """
 tags:
   topic: []
   subject: []
   grade: [] """
 
-
 KEYS = ['topic', 'subject', 'grade']
 MIN_LEVEL = 1
-MAX_LEVEL = 4 # Change this to change allowed levels.
+MAX_LEVEL = 4  # Change this to change allowed levels.
 INDENT = 2
+ALLOW_EXTRA_HEADERS = True
 
 MOVE_LEVEL_2_LESSON_YML = False
-
 # Uncommenting the line below will remove level from .md file and move it to lesson.yml
 # MOVE_LEVEL_2_LESSON_YML = True
 
-
 LEVEL = '[{}-{}]'.format(MIN_LEVEL, MAX_LEVEL)
+
 
 def lesson_yml(md_filepath, new_level=float('inf')):
     lesson_yml_path = Path(re.sub(r'\w+\.md', 'lesson.yml', md_filepath))
@@ -59,16 +58,17 @@ def update_lesson_yml(yml_data, new_level=float('Inf')):
         else:
             yml_level = 'level: '
     else:
-        yml_level= 'level: {}'.format(max(min(new_level, 4), 1))
+        yml_level = 'level: {}'.format(max(min(new_level, 4), 1))
 
     # Fixes the order of the tags
     yml_tags = '\ntags:\n'
     for key_type in KEYS:
-        match = re.search(r"({}:)(\[.*\]\n)".format(key_type), yml_data)
+        match = re.search(r"({}:)(\[.*\]\r?\n)".format(key_type), yml_data)
         if match:
-            yml_tags += '{}{} {}'.format(' '*INDENT, match.group(1), match.group(2))
+            yml_tags += '{}{} {}'.format(' ' * INDENT, match.group(1),
+                                         match.group(2))
         # else:
-            # yml_data_new += '{}{}: []\n'.format(' '*INDENT, key_type)
+        # yml_data_new += '{}{}: []\n'.format(' '*INDENT, key_type)
     # return level + any found yml tags
     return yml_level + (yml_tags if yml_tags != '\ntags:\n' else '\n')
 
@@ -94,27 +94,31 @@ def sort_yml_in_md(md_data, remove_level):
     translator = re.search(r"(translator:) *(.*) *", yaml_header)
     rem = re.finditer(REGEX_FIND_REM, yaml_header)
 
-    sorted_yaml = ''
-    for result in [title, level, author, translator, *rem, licence, lang, external]:
-        if result:
-            if not result.group(0):
-                continue
-            if result.group(1) == 'level:' and remove_level:
-                    continue
-            else:
-                if not result.group(1).strip():
-                    continue
-                print(result.group(1))
-                non_word = re.search(r"[^\w\sæøåÆØÅ]", result.group(2))
-                if non_word:
-                    sorted_yaml += '{} "{}"\n'.format(result.group(1), result.group(2).strip())
-                else:
-                    sorted_yaml += "{} {}\n".format(result.group(1), result.group(2).strip())
+    sorted_yaml = add_legal_tags(
+        [title, level, author, translator, licence, lang, external], remove_level, 1)
+    if ALLOW_EXTRA_HEADERS:
+        sorted_yaml += add_legal_tags(rem, remove_level, 2)
 
     if level and remove_level:
         if level.group(2):
             return (sorted_yaml[:-1], level.group(2))
     return (sorted_yaml[:-1], float('Inf'))
+
+
+def add_legal_tags(tags, remove_level, group_num):
+    result_str = ''
+    for match in tags:
+        if not match:
+            continue
+        if not match.group(0).strip():
+            continue
+        if match.group(group_num) == 'level:' and remove_level:
+            continue
+        non_word = re.search(r"[^\w\sæøåÆØÅ]", match.group(group_num + 1))
+        result_str += '{} {}{}{}\n'.format(
+            match.group(group_num), '"' if non_word else '',
+            match.group(group_num + 1).strip(), '"' if non_word else '')
+    return result_str
 
 
 def main():
