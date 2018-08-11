@@ -378,7 +378,7 @@ def fix_class_name_in_header(header):
     if class_name and class_name not in CLASSES_LIST:
         new_class_name = levenshtein_lst(class_name, CLASSES_LIST,
                                          header.strip())
-        header = '{} {{.{}}}'.format(first_part_of_header,
+        header = '{} {{.{}}}'.format(first_part_of_header.rstrip(),
                                          new_class_name)
     return header
 
@@ -388,7 +388,7 @@ def fix_headers(header):
     header = re.sub(r'^ *(#+) *(.)', r'\1 \2', header)
 
     # Removes all punctuation from titles
-    header = re.sub(r'^(#+ .*)(\.|\,|\;) *\r?\n', r'\1', header)
+    header = re.sub(r'(#+ .*)(\.|\,|\;) *$', r'\1', header)
 
     # This fixes mistakes in the class, eg {{.intro} or .intro
     header = re.sub(r'^(#.*[^ {]) *(?:{*)(\.\w+)(?:}*)$', r'\1 {\2}',
