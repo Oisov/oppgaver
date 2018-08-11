@@ -238,6 +238,7 @@ def split_md(md_data_lst):
         last='')
 
     html_key = ''
+    backticks_start = ''
     yaml_count = 0
     table_columns = 0
 
@@ -282,14 +283,18 @@ def split_md(md_data_lst):
         if not (md_data_['last'] == 'html'):
 
             is_codeblock = md_data_['last'] == 'codeblocks'
-            codeblock_start_end = re.search('^ *((`{2,}([^`\n]+)`{2,})|((`{2,})(.*)))', line)
+            codeblock_start_end = re.search('^ *((`{3,}([^`\n]+)`{3,})|([^`\n\r]*(`{3,})(.*)))', line)
             # The regex above checks both for starting and ending backticks
             if codeblock_start_end or is_codeblock:
                 md_data_ = append_if_new(md_data_, line, 'codeblocks')
                 if codeblock_start_end:
+                    current_backticks = codeblock_start_end.group(5)
                     is_oneliner = True if codeblock_start_end.group(2) else False
-                    if is_codeblock or is_oneliner:
+                    if is_oneliner or (is_codeblock and current_backticks == backticks_start):
+                        backticks_start = ''
                         md_data_ = append_if_new(md_data_, '', 'textblocks')
+                    elif not backticks_start:
+                        backticks_start = current_backticks
                 continue
 
 
@@ -554,17 +559,17 @@ def fix_codeblocks(codeblock, has_looped = False):
     # This block might be removed if many new languages emerges
     # The supported languages can be changed in the PROGRAMMING_LANGUAGE
     # variable. Located in 'linter_defaults'
-    has_language = re.search('(( *)`{3,}) *(\w*)(.*)', first_line)
-    indent = has_language.group(2)
-    if has_language:
-        backticks = has_language.group(1)
+    has_language = re.search('( *)(`{3,}) *(\w*)(.*)', first_line)
+    indent = has_language.group(1)
+    backticks = has_language.group(2)
+    if has_language.group(3).strip():
         language = has_language.group(3)
         remaining = has_language.group(4)
         if language not in PROGRAMMING_LANGUAGES:
             language = levenshtein_lst(language,
                                        PROGRAMMING_LANGUAGES,
                                        first_line)
-        first_line = '{}{}'.format(backticks, language.strip())
+        first_line = '{}{}{}'.format(indent, backticks, language.strip())
         if remaining:
             first_line += '\n' + remaining.strip()
 
@@ -577,12 +582,10 @@ def fix_codeblocks(codeblock, has_looped = False):
                    |
                    |     text
     '''
-    has_trailing_text = re.search('(.*)(`{3,})(.*)', last_line)
+    has_trailing_text = re.search('([^`\r\n]*)(`{3,})(.*)', last_line)
     if has_trailing_text:
         code_text = has_trailing_text.group(1)
-        backticks = has_trailing_text.group(2)
-        trailing = has_trailing_text.group(3)
-
+        trailing = has_trailing_text.group(3).strip()
         last_line = code_text + '\n' + indent + backticks if code_text.strip() else indent + backticks
         last_line += '\n\n' + trailing if trailing else ''
 
@@ -626,6 +629,8 @@ def update_md(md_data, filepath):
 
     for i in md_data_['codeblocks']:
         codeblock = md_data_['lst'][i]
+        # print(codeblock)
+        # print()
         md_data_['lst'][i] = fix_codeblocks(codeblock)
 
     for i in md_data_['textblocks']:
