@@ -389,6 +389,13 @@ def fix_class_name_in_header(header):
 
 
 def fix_headers(header):
+    header_2 = re.search(r'^([^=\r\n]*)=+$', header)
+    if header_2:
+        return fix_headers('# ' + header_2.group(1).strip())
+    header_3 = re.search(r'^([^=\r\n]*)-+$', header)
+    if header_3:
+        return fix_headers('## ' + header_3.group(1).strip())
+
     # Makes sure every title has exactly one space after the last #
     header = re.sub(r'^ *(#+) *(.)', r'\1 \2', header)
 
@@ -446,6 +453,10 @@ def is_header(line):
 
     header = re.search(r'^(#+)( *)(.)', line)
     if not header:
+        header_2 = re.search(r'^([^=\r\n]+)=+$', line)
+        header_3 = re.search(r'^([^=\r\n]+)-+$', line)
+        if header_2 or header_3:
+            return True
         return False
     if header.group(2):
         return True
